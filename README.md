@@ -10,8 +10,13 @@
 - `0x0-upload-string` will upload a string to a `0x0.st` compatible
   server, that has been read in from the minibuffer.
   
-By default, all these functions default to `0x0.st` as their server of
-choice, but by customising the variable `0x0-url`, this can be changed.
+By default, all these functions default to https://0x0.st as their
+server of choice, but by customising the variable `0x0-url`, this can be
+changed.
+
+See https://github.com/lachs0r/0x0 for more details, and consider
+donating to https://liberapay.com/lachs0r/donate if you like the
+service.
 
 Bug reports and patches should be sent to my [public inbox].
 
