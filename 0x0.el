@@ -62,7 +62,7 @@ The string BOUNDARY will be used to as the multipart boundary."
       (let ((url (buffer-substring (line-beginning-position) (line-end-position))))
         (kill-new url)
         (message "Yanked `%s' into kill ring." url))
-    (error "Failed to upload"))  )
+    (error "Failed to upload")))
 
 ;;;###autoload
 (defun 0x0-upload (start end)
