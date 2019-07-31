@@ -40,7 +40,29 @@
   "URL to use for `0x0-upload'."
   :type 'string)
 
+(defcustom 0x0-min-age 30.0
+  "Maximal number of days a file is kept.
+
+See https://github.com/lachs0r/0x0/blob/master/cleanup.py#L12"
+  :type 'float)
+
+(defcustom 0x0-max-age 365.0
+  "Minimal number of days a file is kept.
+
+See https://github.com/lachs0r/0x0/blob/master/cleanup.py#L13"
+  :type 'float)
+
+(defcustom 0x0-max-size (float (* 1024 1024 256))
+  "Maximal permitted file size.
+
+See https://github.com/lachs0r/0x0/blob/master/fhost.py#L22"
+  :type 'float)
+
 (defvar 0x0--filename nil)
+
+(defun 0x0--calc-size (size)
+  (+ 0x0-min-age (* (- 0x0-min-age 0x0-max-age)
+                    (expt (- (/ size 0x0-max-size) 1.0) 3))))
 
 (defun 0x0--request-data (start end boundary)
   "Prepare a HTTP Body to upload the current buffer from START to END.
@@ -56,12 +78,13 @@ The string BOUNDARY will be used to as the multipart boundary."
       (insert "\r\n--" boundary "--")
       (buffer-string))))
 
-(defun 0x0--callback (&rest _)
+(defun 0x0--callback (_status size)
   "Function that is called when file is uploaded."
   (if (search-forward-regexp (concat "^" (regexp-quote 0x0-url)) nil t)
       (let ((url (buffer-substring (line-beginning-position) (line-end-position))))
         (kill-new url)
-        (message "Yanked `%s' into kill ring." url))
+        (message "Yanked `%s' into kill ring. Should last ~%2g days"
+                 url (0x0--calc-size size)))
     (error "Failed to upload")))
 
 ;;;###autoload
@@ -77,7 +100,7 @@ If START and END are not specified, upload entire buffer."
           `(("Content-Type" . ,(concat "multipart/form-data; boundary=" boundary))))
          (url-request-data (0x0--request-data start end boundary))
          (url-request-method "POST"))
-    (url-retrieve 0x0-url #'0x0--callback)
+    (url-retrieve 0x0-url #'0x0--callback (list (- end start)))
     nil))
 
 ;;;###autoload
