@@ -95,7 +95,6 @@ If START and END are not specified, upload entire buffer."
   (interactive (list (if (use-region-p) (region-beginning) (point-min))
                      (if (use-region-p) (region-end) (point-max))))
   (let* ((boundary (format "%X-%X-%X" (random) (random) (random)))
-         (url-debug t)
          (url-request-extra-headers
           `(("Content-Type" . ,(concat "multipart/form-data; boundary=" boundary))))
          (url-request-data (0x0--request-data start end boundary))
