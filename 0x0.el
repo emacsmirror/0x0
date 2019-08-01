@@ -95,7 +95,7 @@ If START and END are not specified, upload entire buffer."
                         (let ((url (buffer-substring (line-beginning-position) (line-end-position))))
                           (kill-new url)
                           (message "Yanked `%s' into kill ring. Should last ~%2g days"
-                                   url (0x0--calc-size timeout)))
+                                   url timeout))
                       (error "Failed to upload"))))
     nil))
 
