@@ -18,6 +18,15 @@ See https://github.com/lachs0r/0x0 for more details, and consider
 donating to https://liberapay.com/lachs0r/donate if you like the
 service.
 
+How to use
+----------
+
+Using [MELPA] and `use-package`, a minimal setup might look something like
+this:
+
+	(use-package 0x0
+	  :bind ("C-F8" . bang))
+
 Bug reports and patches should be sent to my [public inbox].
 
 Copying
@@ -26,5 +35,6 @@ Copying
 `0x0.el` is distributed under the [CC0 1.0 Universal (CC0 1.0) Public
 Domain Dedication][cc0] license.
 
+[MELPA]: https://melpa.org/#/0x0
 [public inbox]: https://lists.sr.ht/~zge/public-inbox
 [cc0]: https://creativecommons.org/publicdomain/zero/1.0/deed
