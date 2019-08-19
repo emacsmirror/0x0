@@ -1,8 +1,8 @@
 ;;; 0x0.el --- Upload to 0x0.st -*- lexical-binding: t -*-
 
 ;; Author: Philip K. <philip@warpmail.net>
-;; Version: 0.1.0
-;; Keywords: faces
+;; Version: 0.1.1
+;; Keywords: comm
 ;; Package-Requires: ((emacs "24.1"))
 ;; URL: https://git.sr.ht/~zge/nullpointer-emacs
 
