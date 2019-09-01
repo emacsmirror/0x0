@@ -25,7 +25,7 @@ Using [MELPA] and `use-package`, a minimal setup might look something like
 this:
 
 	(use-package 0x0
-	  :bind ("C-F8" . bang))
+	  :bind ("F8" . 0x0-upload))
 
 Bug reports and patches should be sent to my [public inbox].
 
