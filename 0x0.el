@@ -65,6 +65,7 @@ See https://github.com/lachs0r/0x0/blob/master/fhost.py#L22"
   :type 'boolean)
 
 (defvar 0x0--filename nil)
+(defvar 0x0--use-file nil)
 
 (defun 0x0--calculate-timeout (size)
   "Calculate days a file of size SIZE would last.
@@ -82,7 +83,9 @@ Operate on region between START and END."
     (call-process-region start end "curl"
                          nil buf nil
                          "-s" "-S" "-F"
-                         (concat "file=@-;filename="
+                         (format (if 0x0--use-file
+                                     "file=@%s"
+                                   "file=@-;filename=%s")
                                  0x0--filename)
                          0x0-url)
     buf))
@@ -122,7 +125,7 @@ If START and END are not specified, upload entire buffer."
     (with-current-buffer resp
       (goto-char (point-min))
       (unless (search-forward-regexp (concat "^" (regexp-quote 0x0-url)) nil t)
-        (error "Failed to upload"))
+        (error "Failed to upload. See %s for more details" (buffer-name resp)))
       (kill-new (buffer-string))
       (message "Yanked `%s' into kill ring. Should last ~%2g days"
                (buffer-string) timeout))
@@ -133,8 +136,10 @@ If START and END are not specified, upload entire buffer."
   "Upload FILE to `0x0-url'."
   (interactive "f")
   (with-temp-buffer
-    (insert-file-contents file)
-    (let ((0x0--filename file))
+    (unless 0x0-use-curl-if-installed
+      (insert-file-contents file))
+    (let ((0x0--filename file)
+          (0x0--use-file t))
       (0x0-upload (point-min) (point-max)))))
 
 ;;;###autoload
