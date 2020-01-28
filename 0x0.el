@@ -59,9 +59,7 @@ See https://github.com/lachs0r/0x0/blob/master/fhost.py#L22"
   :type 'float)
 
 (defcustom 0x0-use-curl-if-installed t
-  "Maximal permitted file size.
-
-See https://github.com/lachs0r/0x0/blob/master/fhost.py#L22"
+  "Automatically check if curl is installed."
   :type 'boolean)
 
 (defvar 0x0--filename nil)
