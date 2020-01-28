@@ -124,6 +124,9 @@ If START and END are not specified, upload entire buffer."
       (goto-char (point-min))
       (unless (search-forward-regexp (concat "^" (regexp-quote 0x0-url)) nil t)
         (error "Failed to upload. See %s for more details" (buffer-name resp)))
+      (save-match-data
+        (when (search-forward-regexp "[[:space:]]*$" nil t)
+          (replace-match "")))
       (kill-new (buffer-string))
       (message "Yanked `%s' into kill ring. Should last ~%2g days"
                (buffer-string) timeout))
