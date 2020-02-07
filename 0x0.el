@@ -125,7 +125,16 @@ Operate on region between START and END."
               (insert "\r\n--" boundary "--")
               (buffer-string))))
          (url-request-method "POST"))
-    (url-retrieve-synchronously (plist-get 0x0--server :host))))
+    (with-current-buffer
+        (url-retrieve-synchronously
+         (concat (if (plist-get 0x0--server :no-tls)
+                     "http" "https")
+                 "://" (plist-get 0x0--server :host)))
+      (goto-char (point-min))
+      (save-match-data
+        (when (search-forward-regexp "^[[:space:]]*$" nil t)
+          (delete-region (point-min) (match-end 0))))
+      (current-buffer))))
 
 (defun 0x0--choose-service ()
   (if current-prefix-arg
@@ -157,20 +166,19 @@ If START and END are not specified, upload entire buffer."
           (timeout (0x0--calculate-timeout (- end start))))
       (with-current-buffer resp
         (goto-char (point-min))
-        (unless (search-forward-regexp
-                 (concat "^"
-                         (regexp-opt '("http" "https"))
-                         "://"
-                         (regexp-quote (plist-get 0x0--server :host)))
-                 nil t)
-          (error "Failed to upload/parse. See %s for more details"
-                 (buffer-name resp)))
         (save-match-data
-          (when (search-forward-regexp "[[:space:]]*$" nil t)
-            (replace-match "")))
-        (kill-new (buffer-string))
-        (message (concat (format "Yanked `%s' into kill ring." (buffer-string) )
-                         (and timeout (format " Should last ~%2g days." timeout)))))
+          (unless (search-forward-regexp
+                   (concat "^"
+                           (regexp-opt '("http" "https"))
+                           "://"
+                           (regexp-quote (plist-get 0x0--server :host))
+                           ".*$")
+                   nil t)
+            (error "Failed to upload/parse. See %s for more details"
+                   (buffer-name resp)))
+          (kill-new (match-string 0))
+          (message (concat (format "Yanked `%s' into kill ring." (match-string 0) )
+                           (and timeout (format " Should last ~%2g days." timeout))))))
       (kill-buffer resp))))
 
 ;;;###autoload
