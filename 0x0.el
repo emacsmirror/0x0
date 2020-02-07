@@ -36,27 +36,40 @@
   :group 'convenience
   :prefix "0x0-")
 
-(defcustom 0x0-url "https://0x0.st"
-  "URL to use for `0x0-upload'."
-  :type 'string)
+(defcustom 0x0-services
+  `((0x0
+     :host "0x0.st"
+     :query "file"
+     :min-age 30
+     :max-age 365
+     :max-size ,(* 1024 1024 512)))
+  "Alist of different 0x0-like services.
 
-(defcustom 0x0-min-age 30.0
-  "Maximal number of days a file is kept.
+The car is a symbol identifying the service, the cdr a plist,
+with the following keys:
 
-See https://github.com/lachs0r/0x0/blob/master/cleanup.py#L12"
-  :type 'float)
+    :host		- domain name of the server (string, necessary)
+    :path		- server path to send POST request to (string,
+				  optional)
+    :no-tls		- is tls not supported (bool, nil by default)
+    :query		- query string used for file upload (string,
+				  necessary)
+    :min-age	- on 0x0-like servers, minimal number of days
+				  a file is kept online (number, optional)
+    :max-age	- on 0x0-like servers, maximal number of days
+				  a file is kept online (number, optional)
+    :max-size	- file limit for this server (number, optional)
 
-(defcustom 0x0-max-age 365.0
-  "Minimal number of days a file is kept.
+This variable only describes servers, but doesn't set anything.
+See `0x0-default-host' if you want to change the server you use."
+  :type '(alist :key-type symbol
+                :value-type (plist :value-type sexp)))
 
-See https://github.com/lachs0r/0x0/blob/master/cleanup.py#L13"
-  :type 'float)
+(defcustom 0x0-default-host '0x0
+  "Symbol describing server to use.
 
-(defcustom 0x0-max-size (float (* 1024 1024 256))
-  "Maximal permitted file size.
-
-See https://github.com/lachs0r/0x0/blob/master/fhost.py#L22"
-  :type 'float)
+The symbol must be a key from the alist `0x0-services'."
+  :type `(choice ,@(mapcar #'car 0x0-services)))
 
 (defcustom 0x0-use-curl-if-installed t
   "Automatically check if curl is installed."
@@ -64,14 +77,17 @@ See https://github.com/lachs0r/0x0/blob/master/fhost.py#L22"
 
 (defvar 0x0--filename nil)
 (defvar 0x0--use-file nil)
+(defvar 0x0--server nil)
 
 (defun 0x0--calculate-timeout (size)
-  "Calculate days a file of size SIZE would last.
-
-See also `0x0-min-age' and `0x0-max-age'."
-  (+ 0x0-min-age
-     (* (- 0x0-min-age 0x0-max-age)
-        (expt (- (/ size 0x0-max-size) 1.0) 3))))
+  "Calculate days a file of size SIZE would last."
+  (condition-case nil
+      (let ((min-age (float (plist-get 0x0--server :min-age)))
+            (max-age (float (plist-get 0x0--server :max-age)))
+            (max-size (float (plist-get 0x0--server :max-size))))
+        (+ min-age (* (- min-age max-age)
+                      (expt (- (/ size max-size) 1.0) 3))))
+    (wrong-type-argument nil)))
 
 (defun 0x0--use-curl (start end)
   "Backend function for uploading using curl.
@@ -82,10 +98,11 @@ Operate on region between START and END."
                          nil buf nil
                          "-s" "-S" "-F"
                          (format (if 0x0--use-file
-                                     "file=@%s"
-                                   "file=@-;filename=%s")
+                                     "%s=@%s"
+                                   "%s=@-;filename=%s")
+                                 (plist-get 0x0--server :query)
                                  0x0--filename)
-                         0x0-url)
+                         (plist-get 0x0--server :host))
     buf))
 
 (defun 0x0--use-url (start end)
@@ -99,58 +116,84 @@ Operate on region between START and END."
           (let ((source (current-buffer))
                 (filename (or 0x0--filename (buffer-name))))
             (with-temp-buffer
-              (insert "--" boundary "\r\n"
-                      "Content-Disposition: form-data; name=\"file\"; filename=\"" filename "\"\r\n"
-                      "Content-type: text/plain\r\n\r\n")
+              (insert "--" boundary "\r\n")
+              (insert "Content-Disposition: form-data; ")
+              (insert "name=\"" (plist-get 0x0--server :query)
+                      "\"; filename=\"" filename "\"\r\n")
+              (insert "Content-type: text/plain\r\n\r\n")
               (insert-buffer-substring-no-properties source start end)
               (insert "\r\n--" boundary "--")
               (buffer-string))))
          (url-request-method "POST"))
-    (url-retrieve-synchronously 0x0-url)))
+    (url-retrieve-synchronously (plist-get 0x0--server :host))))
+
+(defun 0x0--choose-service ()
+  (if current-prefix-arg
+      (intern (completing-read "Service: "
+                               (mapcar #'car 0x0-services)
+                               nil t nil nil
+                               0x0-default-host))
+    0x0-default-host))
 
 ;;;###autoload
-(defun 0x0-upload (start end)
+(defun 0x0-upload (start end service)
   "Upload current buffer to `0x0-url' from START to END.
 
 If START and END are not specified, upload entire buffer."
   (interactive (list (if (use-region-p) (region-beginning) (point-min))
-                     (if (use-region-p) (region-end) (point-max))))
-  (let ((resp (if (and 0x0-use-curl-if-installed
-                       (executable-find "curl"))
-                  (0x0--use-curl start end)
-                (0x0--use-url start end)))
-        (timeout (0x0--calculate-timeout (- end start))))
-    (with-current-buffer resp
-      (goto-char (point-min))
-      (unless (search-forward-regexp (concat "^" (regexp-quote 0x0-url)) nil t)
-        (error "Failed to upload. See %s for more details" (buffer-name resp)))
-      (save-match-data
-        (when (search-forward-regexp "[[:space:]]*$" nil t)
-          (replace-match "")))
-      (kill-new (buffer-string))
-      (message "Yanked `%s' into kill ring. Should last ~%2g days"
-               (buffer-string) timeout))
-    (kill-buffer resp)))
+                     (if (use-region-p) (region-end) (point-max))
+                     (0x0--choose-service)))
+  (let ((0x0--server (cdr (assq service 0x0-services))))
+    (unless 0x0--server
+      (error "Service %s unknown." service))
+    (unless (plist-get 0x0--server :host)
+      (error "Service %s has no :host field" service))
+    (unless (plist-get 0x0--server :query)
+      (error "Service %s has no :query field" service))
+    (let ((resp (if (and 0x0-use-curl-if-installed
+                         (executable-find "curl"))
+                    (0x0--use-curl start end)
+                  (0x0--use-url start end)))
+          (timeout (0x0--calculate-timeout (- end start))))
+      (with-current-buffer resp
+        (goto-char (point-min))
+        (unless (search-forward-regexp
+                 (concat "^"
+                         (regexp-opt '("http" "https"))
+                         "://"
+                         (regexp-quote (plist-get 0x0--server :host)))
+                 nil t)
+          (error "Failed to upload/parse. See %s for more details"
+                 (buffer-name resp)))
+        (save-match-data
+          (when (search-forward-regexp "[[:space:]]*$" nil t)
+            (replace-match "")))
+        (kill-new (buffer-string))
+        (message (concat (format "Yanked `%s' into kill ring." (buffer-string) )
+                         (and timeout (format " Should last ~%2g days." timeout)))))
+      (kill-buffer resp))))
 
 ;;;###autoload
-(defun 0x0-upload-file (file)
+(defun 0x0-upload-file (file service)
   "Upload FILE to `0x0-url'."
-  (interactive "f")
+  (interactive (list (read-file-name "Upload file: ")
+                     (0x0--choose-service)))
   (with-temp-buffer
     (unless 0x0-use-curl-if-installed
       (insert-file-contents file))
     (let ((0x0--filename file)
           (0x0--use-file t))
-      (0x0-upload (point-min) (point-max)))))
+      (0x0-upload (point-min) (point-max) service))))
 
 ;;;###autoload
-(defun 0x0-upload-string (string)
+(defun 0x0-upload-string (string service)
   "Upload STRING to `0x0-url'."
-  (interactive "MUpload: ")
+  (interactive (list (read-string "Upload string: ")
+                     (0x0--choose-service)))
   (with-temp-buffer
     (insert string)
     (let ((0x0--filename "upload.txt"))
-      (0x0-upload (point-min) (point-max)))))
+      (0x0-upload (point-min) (point-max) service))))
 
 (provide '0x0)
 
