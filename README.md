@@ -11,8 +11,9 @@
   server, that has been read in from the minibuffer.
   
 By default, all these functions default to https://0x0.st as their
-server of choice, but by customising the variable `0x0-url`, this can be
-changed.
+server of choice, but by customising the variable `0x0-default-host`,
+this can be changed, or by prefixing the above mentioned commands with
+a prefix argument. A list of servers is to be found in `0x0-services`.
 
 See https://github.com/lachs0r/0x0 for more details, and consider
 donating to https://liberapay.com/lachs0r/donate if you like the
