@@ -110,7 +110,11 @@ Operate on region between START and END."
                                    "%s=@-;filename=%s")
                                  (plist-get 0x0--server :query)
                                  0x0--filename)
-                         (plist-get 0x0--server :host))
+                         (format "%s://%s/%s"
+                                 (if (plist-get 0x0--server :no-tls)
+                                     "http" "https")
+                                 (plist-get 0x0--server :host)
+                                 (or (plist-get 0x0--server :path) "")))
     buf))
 
 (defun 0x0--use-url (start end)
@@ -138,7 +142,7 @@ Operate on region between START and END."
          (concat (if (plist-get 0x0--server :no-tls)
                      "http" "https")
                  "://" (plist-get 0x0--server :host)
-                 "/" (plist-get 0x0--server :path)))
+                 "/" (or (plist-get 0x0--server :path) "")))
       (rename-buffer (format " *%s response*" 0x0--current-host) t)
       (goto-char (point-min))
       (save-match-data
