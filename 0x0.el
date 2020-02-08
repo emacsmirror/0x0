@@ -81,10 +81,10 @@ The symbol must be a key from the alist `0x0-services'."
   "Automatically check if curl is installed."
   :type 'boolean)
 
-(defvar 0x0--filename nil)
-(defvar 0x0--use-file nil)
-(defvar 0x0--server nil)
-(defvar 0x0--current-host nil)
+(defvar 0x0--filename)
+(defvar 0x0--use-file)
+(defvar 0x0--server)
+(defvar 0x0--current-host)
 
 (defun 0x0--calculate-timeout (size)
   "Calculate days a file of size SIZE would last."
