@@ -42,7 +42,13 @@
      :query "file"
      :min-age 30
      :max-age 365
-     :max-size ,(* 1024 1024 512)))
+     :max-size ,(* 1024 1024 512))
+    (ttm
+     :host "ttm.sh"
+     :query "file"
+     :min-age 30
+     :max-age 365
+     :max-size ,(* 1024 1024 256)))
   "Alist of different 0x0-like services.
 
 The car is a symbol identifying the service, the cdr a plist,
