@@ -188,7 +188,7 @@ If START and END are not specified, upload entire buffer."
                    (buffer-name resp)))
           (kill-new (match-string 0))
           (message (concat (format "Yanked `%s' into kill ring." (match-string 0) )
-                           (and timeout (format " Should last ~%2g days." timeout))))))
+                           (and timeout (format " Should last ~%g days." timeout))))))
       (kill-buffer resp))))
 
 ;;;###autoload
