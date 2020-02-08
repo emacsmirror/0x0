@@ -28,6 +28,7 @@
 ;; https://liberapay.com/lachs0r/donate if you like the service.
 
 (require 'url)
+(require 'ert)
 
 ;;; Code:
 
@@ -188,8 +189,9 @@ If START and END are not specified, upload entire buffer."
                    (buffer-name resp)))
           (kill-new (match-string 0))
           (message (concat (format "Yanked `%s' into kill ring." (match-string 0) )
-                           (and timeout (format " Should last ~%g days." timeout))))))
-      (kill-buffer resp))))
+                           (and timeout (format " Should last ~%g days." timeout))))
+          (prog1 (match-string 0)
+            (kill-buffer resp)))))))
 
 ;;;###autoload
 (defun 0x0-upload-file (file service)
@@ -212,6 +214,24 @@ If START and END are not specified, upload entire buffer."
     (insert string)
     (let ((0x0--filename "upload.txt"))
       (0x0-upload (point-min) (point-max) service))))
+
+(defun 0x0--test-service (service)
+  (let ((rand (make-string 256 0)))
+    (dolist (0x0-use-curl-if-installed '(t nil))
+      (dotimes (i (length rand))
+        (setf (aref rand i) (+ ?a (random (- ?z ?a)))))
+      (let* ((resp (0x0-upload-string rand service))
+             result)
+        (with-current-buffer (url-retrieve-synchronously resp)
+          (goto-char (point-min))
+          (forward-paragraph)
+          (delete-region (point-min) (1+ (point)))
+          (setq result (buffer-string)))
+        (should (equal rand result))))))
+
+(dolist (service (mapcar #'car 0x0-services))
+  (let ((name (intern (format "0x0-test-%s" (symbol-name service)))))
+    (eval `(ert-deftest ,name () (0x0--test-service ',service)))))
 
 (provide '0x0)
 
