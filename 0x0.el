@@ -71,7 +71,7 @@ See `0x0-default-host' if you want to change the server you use."
   :type '(alist :key-type symbol
                 :value-type (plist :value-type sexp)))
 
-(defcustom 0x0-default-host '0x0
+(defcustom 0x0-default-service '0x0
   "Symbol describing server to use.
 
 The symbol must be a key from the alist `0x0-services'."
@@ -150,8 +150,8 @@ Operate on region between START and END."
       (intern (completing-read "Service: "
                                (mapcar #'car 0x0-services)
                                nil t nil nil
-                               0x0-default-host))
-    0x0-default-host))
+                               0x0-default-service))
+    0x0-default-service))
 
 ;;;###autoload
 (defun 0x0-upload (start end service)
