@@ -84,6 +84,7 @@ The symbol must be a key from the alist `0x0-services'."
 (defvar 0x0--filename nil)
 (defvar 0x0--use-file nil)
 (defvar 0x0--server nil)
+(defvar 0x0--current-host nil)
 
 (defun 0x0--calculate-timeout (size)
   "Calculate days a file of size SIZE would last."
@@ -99,7 +100,7 @@ The symbol must be a key from the alist `0x0-services'."
   "Backend function for uploading using curl.
 
 Operate on region between START and END."
-  (let ((buf (generate-new-buffer "*0x0 response*")))
+  (let ((buf (generate-new-buffer (format " *%s response*" 0x0--current-host))))
     (call-process-region start end "curl"
                          nil buf nil
                          "-s" "-S" "-F"
@@ -135,7 +136,9 @@ Operate on region between START and END."
         (url-retrieve-synchronously
          (concat (if (plist-get 0x0--server :no-tls)
                      "http" "https")
-                 "://" (plist-get 0x0--server :host)))
+                 "://" (plist-get 0x0--server :host)
+                 "/" (plist-get 0x0--server :path)))
+      (rename-buffer (format " *%s response*" 0x0--current-host) t)
       (goto-char (point-min))
       (save-match-data
         (when (search-forward-regexp "^[[:space:]]*$" nil t)
@@ -158,7 +161,8 @@ If START and END are not specified, upload entire buffer."
   (interactive (list (if (use-region-p) (region-beginning) (point-min))
                      (if (use-region-p) (region-end) (point-max))
                      (0x0--choose-service)))
-  (let ((0x0--server (cdr (assq service 0x0-services))))
+  (let ((0x0--current-host service)
+        (0x0--server (cdr (assq service 0x0-services))))
     (unless 0x0--server
       (error "Service %s unknown." service))
     (unless (plist-get 0x0--server :host)
