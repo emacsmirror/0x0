@@ -167,7 +167,9 @@ If START and END are not specified, upload entire buffer."
                      (if (use-region-p) (region-end) (point-max))
                      (0x0--choose-service)))
   (let ((0x0--current-host service)
-        (0x0--server (cdr (assq service 0x0-services))))
+        (0x0--server (cdr (assq service 0x0-services)))
+        (0x0--filename (if (bound-and-true-p 0x0--filename)
+						   0x0--filename (buffer-name))))
     (unless 0x0--server
       (error "Service %s unknown." service))
     (unless (plist-get 0x0--server :host)
