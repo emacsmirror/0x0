@@ -151,6 +151,7 @@ Operate on region between START and END."
       (current-buffer))))
 
 (defun 0x0--choose-service ()
+  "Prompt user for service to use."
   (if current-prefix-arg
       (intern (completing-read "Service: "
                                (mapcar #'car 0x0-services)
@@ -162,7 +163,8 @@ Operate on region between START and END."
 (defun 0x0-upload (start end service)
   "Upload current buffer to `0x0-url' from START to END.
 
-If START and END are not specified, upload entire buffer."
+If START and END are not specified, upload entire buffer.
+SERVICE must be a member of `0x0-services'."
   (interactive (list (if (use-region-p) (region-beginning) (point-min))
                      (if (use-region-p) (region-end) (point-max))
                      (0x0--choose-service)))
@@ -171,7 +173,7 @@ If START and END are not specified, upload entire buffer."
         (0x0--filename (if (bound-and-true-p 0x0--filename)
 						   0x0--filename (buffer-name))))
     (unless 0x0--server
-      (error "Service %s unknown." service))
+      (error "Service %s unknown" service))
     (unless (plist-get 0x0--server :host)
       (error "Service %s has no :host field" service))
     (unless (plist-get 0x0--server :query)
@@ -201,7 +203,9 @@ If START and END are not specified, upload entire buffer."
 
 ;;;###autoload
 (defun 0x0-upload-file (file service)
-  "Upload FILE to `0x0-url'."
+  "Upload FILE to `0x0-url'.
+
+SERVICE must be a member of `0x0-services'."
   (interactive (list (read-file-name "Upload file: ")
                      (0x0--choose-service)))
   (with-temp-buffer
@@ -213,7 +217,9 @@ If START and END are not specified, upload entire buffer."
 
 ;;;###autoload
 (defun 0x0-upload-string (string service)
-  "Upload STRING to `0x0-url'."
+  "Upload STRING to `0x0-url'.
+
+SERVICE must be a member of `0x0-services'."
   (interactive (list (read-string "Upload string: ")
                      (0x0--choose-service)))
   (with-temp-buffer
@@ -222,6 +228,7 @@ If START and END are not specified, upload entire buffer."
       (0x0-upload (point-min) (point-max) service))))
 
 (defun 0x0--test-service (service)
+  "Upload and retrieve a random string for SERVICE."
   (let ((rand (make-string 256 0)))
     (dotimes (i (length rand))
       (setf (aref rand i) (+ ?a (random (- ?z ?a)))))
