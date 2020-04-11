@@ -82,7 +82,7 @@ The symbol must be a key from the alist `0x0-services'."
   "Automatically check if curl is installed."
   :type 'boolean)
 
-(defvar 0x0--filename)
+(defvar 0x0--filename nil)
 (defvar 0x0--use-file nil)
 (defvar 0x0--server)
 (defvar 0x0--current-host)
@@ -170,8 +170,10 @@ SERVICE must be a member of `0x0-services'."
                      (0x0--choose-service)))
   (let ((0x0--current-host service)
         (0x0--server (cdr (assq service 0x0-services)))
-        (0x0--filename (if (bound-and-true-p 0x0--filename)
-						   0x0--filename (buffer-name))))
+        (0x0--filename (or 0x0--filename
+                           (and (buffer-file-name)
+                                (file-name-nondirectory (buffer-file-name))
+                                (buffer-name)))))
     (unless 0x0--server
       (error "Service %s unknown" service))
     (unless (plist-get 0x0--server :host)
@@ -196,8 +198,9 @@ SERVICE must be a member of `0x0-services'."
             (error "Failed to upload/parse. See %s for more details"
                    (buffer-name resp)))
           (kill-new (match-string 0))
-          (message (concat (format "Yanked `%s' into kill ring." (match-string 0) )
-                           (and timeout (format " Should last ~%g days." timeout))))
+          (message (concat "Yanked `%s' into kill ring."
+                           (and timeout " Should last ~%g days."))
+                   (match-string 0) timeout)
           (prog1 (match-string 0)
             (kill-buffer resp)))))))
 
