@@ -109,7 +109,7 @@ Operate on region between START and END."
                                      "%s=@%s"
                                    "%s=@-;filename=%s")
                                  (plist-get 0x0--server :query)
-                                 0x0--filename)
+                                 (expand-file-name 0x0--filename))
                          (format "%s://%s/%s"
                                  (if (plist-get 0x0--server :no-tls)
                                      "http" "https")
