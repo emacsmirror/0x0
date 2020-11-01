@@ -171,9 +171,9 @@ SERVICE must be a member of `0x0-services'."
   (let ((0x0--current-host service)
         (0x0--server (cdr (assq service 0x0-services)))
         (0x0--filename (or 0x0--filename
-                           (and (buffer-file-name)
-                                (file-name-nondirectory (buffer-file-name))
-                                (buffer-name)))))
+                           (if (buffer-file-name)
+                               (file-name-nondirectory (buffer-file-name))
+                             (buffer-name)))))
     (unless 0x0--server
       (error "Service %s unknown" service))
     (unless (plist-get 0x0--server :host)
