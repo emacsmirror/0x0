@@ -1,6 +1,6 @@
 ;;; 0x0.el --- Upload to 0x0.st -*- lexical-binding: t -*-
 
-;; Author: Philip K. <philip@warpmail.net>
+;; Author: Philip K. <philipk@posteo.net>
 ;; Version: 0.4.0
 ;; Keywords: comm
 ;; Package-Requires: ((emacs "24.1"))
