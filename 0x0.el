@@ -78,9 +78,27 @@ See `0x0-default-host' if you want to change the server you use."
 The symbol must be a key from the alist `0x0-services'."
   :type `(choice ,@(mapcar #'car 0x0-services)))
 
+(defcustom 0x0-use-curl 'if-installed
+  "Policy how how to use curl.
+Can be a symbol (t, nil, if-installed) to respectivly use curl
+unconditionally, never or only if found.
+Alternativly the value might be a string describing a path to the
+curl binary."
+  :type '(or (const :tag "Unconditionally" t)
+             (const :tag "If Installed" if-installed)
+             (const :tag "Never" nil)
+             (string :tag "Path to curl")))
+
 (defcustom 0x0-use-curl-if-installed t
   "Automatically check if curl is installed."
+  :set (lambda (sym val)
+         (setq 0x0-use-curl (if val 'if-installed nil))
+         (set-default sym val))
   :type 'boolean)
+
+(make-obsolete-variable '0x0-use-curl-if-installed
+                        '0x0-use-curl
+                        "0.4.0" 'set)
 
 (defvar 0x0--filename nil)
 (defvar 0x0--use-file nil)
@@ -102,7 +120,7 @@ The symbol must be a key from the alist `0x0-services'."
 
 Operate on region between START and END."
   (let ((buf (generate-new-buffer (format " *%s response*" 0x0--current-host))))
-    (call-process-region start end "curl"
+    (call-process-region start end (if (stringp 0x0-use-curl) 0x0-use-curl "curl")
                          nil buf nil
                          "-s" "-S" "-F"
                          (format (if 0x0--use-file
@@ -180,8 +198,10 @@ SERVICE must be a member of `0x0-services'."
       (error "Service %s has no :host field" service))
     (unless (plist-get 0x0--server :query)
       (error "Service %s has no :query field" service))
-    (let ((resp (if (and 0x0-use-curl-if-installed
-                         (executable-find "curl"))
+    (let ((resp (if (cond ((eq 0x0-use-curl t))
+                          ((eq 0x0-use-curl 'if-installed)
+                           (executable-find "curl"))
+                          ((stringp 0x0-use-curl)))
                     (0x0--use-curl start end)
                   (0x0--use-url start end)))
           (timeout (0x0--calculate-timeout (- end start))))
