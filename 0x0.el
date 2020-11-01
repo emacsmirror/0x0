@@ -168,7 +168,7 @@ SERVICE must be a member of `0x0-services'."
   (interactive (list (if (use-region-p) (region-beginning) (point-min))
                      (if (use-region-p) (region-end) (point-max))
                      (0x0--choose-service)))
-  (let ((0x0--current-host service)
+  (let ((0x0--current-host (or 0x0--current-host service))
         (0x0--server (cdr (assq service 0x0-services)))
         (0x0--filename (or 0x0--filename
                            (if (buffer-file-name)
@@ -240,6 +240,24 @@ SERVICE must be a member of `0x0-services'."
     (insert (current-kill 0))
     (let ((0x0--filename "kill-ring.txt"))
       (0x0-upload (point-min) (point-max) service))))
+
+(defun 0x0-popup-upload ()
+  "Uploads and kill current buffer."
+  (interactive)
+  (0x0-upload (point-min) (point-max) 0x0--current-host)
+  (kill-buffer (current-buffer)))
+
+;;;###autoload
+(defun 0x0-popup (service)
+  "Create a new buffer and upload it later.
+
+SERVICE must be a member of `0x0-services'."
+  (interactive (list (0x0--choose-service)))
+  (with-current-buffer (generate-new-buffer " *upload*")
+    (local-set-key (kbd "C-c C-c") #'0x0-popup-upload)
+    (setq-local 0x0--current-host service)
+    (pop-to-buffer (current-buffer)))
+  (message "Press C-c C-c to upload."))
 
 (defun 0x0--test-service (service)
   "Upload and retrieve a random string for SERVICE."
