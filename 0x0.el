@@ -230,6 +230,17 @@ SERVICE must be a member of `0x0-services'."
     (let ((0x0--filename "upload.txt"))
       (0x0-upload (point-min) (point-max) service))))
 
+;;;###autoload
+(defun 0x0-upload-kill-ring (service)
+  "Upload current kill to `0x0-url'.
+
+SERVICE must be a member of `0x0-services'."
+  (interactive (list (0x0--choose-service)))
+  (with-temp-buffer
+    (insert (current-kill 0))
+    (let ((0x0--filename "kill-ring.txt"))
+      (0x0-upload (point-min) (point-max) service))))
+
 (defun 0x0--test-service (service)
   "Upload and retrieve a random string for SERVICE."
   (let ((rand (make-string 256 0)))
