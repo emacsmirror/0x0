@@ -101,8 +101,8 @@ curl binary."
 
 (defvar 0x0--filename nil)
 (defvar 0x0--use-file nil)
+(defvar 0x0--current-host nil)
 (defvar 0x0--server)
-(defvar 0x0--current-host)
 
 (defun 0x0--calculate-timeout (size)
   "Calculate days a file of size SIZE would last."
