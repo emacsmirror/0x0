@@ -81,7 +81,9 @@ See `0x0-default-host' if you want to change the server you use."
   "Symbol describing server to use.
 
 The symbol must be a key from the alist `0x0-services'."
-  :type `(choice ,@(mapcar #'car 0x0-services)))
+  :type `(choice ,@(mapcar (lambda (srv)
+                             `(const :tag ,(plist-get (cdr srv) :host) ,(car srv)))
+                           0x0-services)))
 
 (defcustom 0x0-use-curl 'if-installed
   "Policy how how to use curl.
