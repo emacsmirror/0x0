@@ -23,12 +23,18 @@
 (dolist (service (mapcar #'car 0x0-services))
   (let ((name (intern (format "0x0-test-%s" (symbol-name service))))
         (name* (intern (format "0x0-test-%s-curl" (symbol-name service)))))
-    (eval `(ert-deftest ,name ()
-             (let ((0x0-use-curl-if-installed nil))
-               (0x0--test-service ',service))))
-    (eval `(ert-deftest ,name* ()
-             (let ((0x0-use-curl-if-installed t))
-               (0x0--test-service ',service))))))
+    (ert-set-test name
+                  (make-ert-test
+                   :name name
+                   :body (lambda ()
+                           (let ((0x0-use-curl nil))
+                             (0x0--test-service service)))))
+    (ert-set-test name*
+                  (make-ert-test
+                   :name name*
+                   :body (lambda ()
+                           (let ((0x0-use-curl t))
+                             (0x0--test-service service)))))))
 
 (provide '0x0-tests)
 
