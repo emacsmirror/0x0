@@ -220,7 +220,7 @@ SERVICE must be a member of `0x0-services'."
                            (regexp-opt '("http" "https"))
                            "://"
                            (regexp-quote (plist-get 0x0--server :host))
-                           ".*$")
+                           ".+")
                    nil t)
             (error "Failed to upload/parse. See %s for more details"
                    (buffer-name resp)))
