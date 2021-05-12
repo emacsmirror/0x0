@@ -286,6 +286,26 @@ SERVICE must be a member of `0x0-services'."
     (pop-to-buffer (current-buffer)))
   (message "Press C-c C-c to upload."))
 
+(defun 0x0-dwim (service)
+  "Try to guess what to upload.
+
+SERVICE must be a member of `0x0-services'."
+  (interactive (list (0x0--choose-service)))
+  (cond ((region-active-p)
+         (0x0-upload (region-beginning)
+                     (region-end)
+                     service))
+        ((memq last-command '(kill-ring-save
+                              kill-region
+                              append-next-kill))
+         (0x0-upload-kill-ring service))
+        ((let ((file (ffap-guess-file-name-at-point)))
+           (0x0-upload-file file service)
+           t))
+        ((0x0-upload (point-min)
+                     (point-max)
+                     service))))
+
 (provide '0x0)
 
 ;;; 0x0.el ends here
