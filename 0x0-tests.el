@@ -21,17 +21,17 @@
                          (replace-match "" nil nil result))))))))
 
 (dolist (service (mapcar #'car 0x0-services))
-  (let ((name (intern (format "0x0-test-%s" (symbol-name service))))
-        (name* (intern (format "0x0-test-%s-curl" (symbol-name service)))))
+  (let ((name (intern (format "0x0-test-%s" service)))
+        (name+curl (intern (format "0x0-test-%s-curl" service))))
     (ert-set-test name
                   (make-ert-test
                    :name name
                    :body (lambda ()
                            (let ((0x0-use-curl nil))
                              (0x0--test-service service)))))
-    (ert-set-test name*
+    (ert-set-test name+curl
                   (make-ert-test
-                   :name name*
+                   :name name+curl
                    :body (lambda ()
                            (let ((0x0-use-curl t))
                              (0x0--test-service service)))))))
