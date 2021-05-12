@@ -222,7 +222,7 @@ SERVICE must be a member of `0x0-services'."
                            (regexp-quote (plist-get 0x0--server :host))
                            ".+")
                    nil t)
-            (error "Failed to upload/parse. See %s for more details"
+            (error "Failed to upload/parse.  See %s for more details"
                    (buffer-name resp)))
           (kill-new (match-string 0))
           (message (concat "Yanked `%s' into kill ring."
