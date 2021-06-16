@@ -91,10 +91,10 @@ Can be a symbol (t, nil, if-installed) to respectivly use curl
 unconditionally, never or only if found.
 Alternativly the value might be a string describing a path to the
 curl binary."
-  :type '(or (const :tag "Unconditionally" t)
-             (const :tag "If Installed" if-installed)
-             (const :tag "Never" nil)
-             (string :tag "Path to curl")))
+  :type '(choice (const :tag "Unconditionally" t)
+                 (const :tag "If Installed" if-installed)
+                 (const :tag "Never" nil)
+                 (string :tag "Path to curl")))
 
 (defcustom 0x0-use-curl-if-installed t
   "Automatically check if curl is installed."
