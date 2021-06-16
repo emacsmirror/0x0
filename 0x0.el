@@ -1,7 +1,7 @@
 ;;; 0x0.el --- Upload to 0x0.st -*- lexical-binding: t -*-
 
 ;; Author: Philip K. <philipk@posteo.net>
-;; Version: 0.4.2
+;; Version: 0.4.3
 ;; Keywords: comm
 ;; Package-Requires: ((emacs "24.1"))
 ;; URL: https://git.sr.ht/~zge/nullpointer-emacs
