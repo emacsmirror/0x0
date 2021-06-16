@@ -184,6 +184,25 @@ Operate on region between START and END."
                        0x0-default-service)
     0x0-default-service))
 
+(defun 0x0--filename ()
+  "Return a real or made up file name for the current request."
+  (cond
+   ((buffer-file-name)
+    (file-name-nondirectory (buffer-file-name)))
+   ((string-match-p "\\.[[:alnum:]]+\\'"
+                    (buffer-name))
+    (buffer-name))
+   ((catch 'match
+      (let ((mode major-mode))
+        (while mode
+          (let ((auto (rassoc mode auto-mode-alist)))
+            (when (and auto
+                       (string-match "\\\\\\.\\([[:alnum:]]+\\)\\\\'"
+                                     (car auto)))
+              (throw 'match
+                     (concat "file." (match-string 1 (car auto))))))
+          (setq mode (get mode 'derived-mode-parent))))))))
+
 ;;;###autoload
 (defun 0x0-upload (start end service)
   "Upload current buffer to `0x0-url' from START to END.
@@ -195,10 +214,7 @@ SERVICE must be a member of `0x0-services'."
                      (0x0--choose-service)))
   (let ((0x0--current-host (or 0x0--current-host service))
         (0x0--server (cdr (assq service 0x0-services)))
-        (0x0--filename (or 0x0--filename
-                           (if (buffer-file-name)
-                               (file-name-nondirectory (buffer-file-name))
-                             (buffer-name)))))
+        (0x0--filename (or 0x0--filename (0x0--filename))))
     (unless 0x0--server
       (error "Service %s unknown" service))
     (unless (plist-get 0x0--server :host)
