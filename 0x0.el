@@ -286,6 +286,7 @@ SERVICE must be a member of `0x0-services'."
     (pop-to-buffer (current-buffer)))
   (message "Press C-c C-c to upload."))
 
+;;;###autoload
 (defun 0x0-dwim (service)
   "Try to guess what to upload.
 
