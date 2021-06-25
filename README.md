@@ -19,8 +19,8 @@ a prefix argument. A list of servers is to be found in `0x0-services`.
 [Curl][curl] will be used to accelerate defaults, if installed. The
 specific behaviour can be configured using `0x0-use-curl`.
 
-See https://github.com/lachs0r/0x0 for more details, and consider
-donating to https://liberapay.com/lachs0r/donate if you like the
+See https://github.com/mia-0/0x0 for more details, and consider
+donating to https://liberapay.com/mia/donate if you like the
 service.
 
 Bug reports and patches should be sent to my [public inbox].
