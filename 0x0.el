@@ -177,10 +177,11 @@ Operate on region between START and END."
 (defun 0x0--choose-service ()
   "Prompt user for service to use."
   (if current-prefix-arg
-      (completing-read "Service: "
-                       (mapcar #'car 0x0-services)
-                       nil t nil nil
-                       0x0-default-service)
+      (intern
+       (completing-read "Service: "
+                        (mapcar #'car 0x0-services)
+                        nil t nil nil
+                        0x0-default-service))
     0x0-default-service))
 
 (defun 0x0--filename ()
