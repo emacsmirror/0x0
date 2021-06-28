@@ -32,5 +32,5 @@ Domain Dedication][cc0] license.
 
 [curl]: https://curl.haxx.se/
 [MELPA]: https://melpa.org/#/0x0
-[public inbox]: https://lists.sr.ht/~zge/public-inbox
+[public inbox]: https://lists.sr.ht/~pkal/public-inbox
 [cc0]: https://creativecommons.org/publicdomain/zero/1.0/deed
