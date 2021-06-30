@@ -1,0 +1,105 @@
+* emacs-0x0
+
+Integration with [[https://0x0.st][0x0.st]] services from emacs. Intended for use in ERC to share images, files, and blocks of code.
+
+The commands this package offers:
+
+- ~0x0-dwim~ chooses the right one of the following, based on location or previous commands.
+- ~0x0-upload-text~ will upload the active region or if not existent the entire buffer
+- ~0x0-upload-file~ will upload a selected file
+- ~0x0-upload-kill-ring~ uploads the content of the kill ring
+- ~0x0-popup~ creates and displays a buffer and lets you uploads it contents later
+- ~0x0-shorten-uri~ prompts for a uri, shortens it
+
+** Installation
+
+*** MELPA
+
+Coming soon.
+
+*** Doom Emacs (straight.el recipe + use-package)
+
+With doom and straight it is easy to install the package directly from this gitlab repository. In /.doom.d/packages.el/:
+
+#+begin_src emacs-lisp :eval no
+(package! 0x0
+  :recipe (:host gitlab :repo "willvaughn/emacs-0x0"))
+#+end_src
+
+The minimal config to get started in your /.doom.d/config.el/ is:
+
+#+begin_src emacs-lisp :eval no
+(use-package! 0x0)
+#+end_src
+
+** Basic Usage
+
+Use cases:
+
+- From anywhere: ~0x0-upload-file~, pick a file, you now have a 0x0 uri in your clipboard.
+- From anywhere: ~0x0-shorten-uri~, paste in the url you want shortened, you now have a 0x0 uri in your clipboard.
+- From a dired buffer: put your cursor on the file you want to share, use ~0x0-upload-file~ or ~0x0-dwim~, you now have a 0x0 uri in your clipboard.
+- From a code file: ~0x0-upload-text~ or ~0x0-dwim~, the entire file is uploaded and you now have a 0x0 uri in your clipboard.
+- From a code file, with a region selected: ~0x0-upload-text~ or ~0x0-dwim~, the selected text is uploaded and you now have a 0x0 uri in your clipboard.
+- From anywhere: ~0x0-popup~, opens a buffer, paste and write things into it, when you're ready to upload it to 0x0 press ~C-c C-c~, you now have a 0x0 uri in your clipboard.
+- Choosing servers: Add the ~C-u~ prefix argument and you'll be prompted for a server choice. This let's you upload to [[https://envs.sh]], [[https://ttm.sh]], or a server you run yourself.
+
+** Known Bugs & Limitations
+
+*** Multibyte Files (PNG, PDF, etc) Only Work With =curl=
+
+If you have =(setq 0x0-use-curl nil)= you will fall back to the =url= package in emacs. You will not be able to upload an image, pdf, or any other type of file that contains multibyte data. If someone knows how to use the =url= in a way that makes this work, please contribute a patch.
+
+*** URI Shortening Only Works With =curl=
+
+Calling =0x0-shorten-uri= without having support for curl is not implemented at this time. It throws an error if you don't have curl installed, or if you have =(setq 0x0-use-curl nil)=.
+
+*** =0x0-dwim= Considered Dangerous
+
+You can upload information you didn't intend to when using =0x0-dwim= much easier than you can when using other commands.
+
+**** =0x0-dwim= Dired Bug
+
+You're in your =~/Pictures= directoy in a =dired= buffer:
+
+#+begin_src
+  /home/nackjicholson/Pictures:
+  total used in directory 276K available 115.6 GiB
+  -rw-r--r--  1 nackjicholson wheel  683 Jun 23 16:50 Screenshot from 2021-06-23 16-49-59.png
+  -rw-r--r--  1 nackjicholson wheel  10K Jun 24 11:17 Screenshot from 2021-06-24 11-17-06.png
+  -rw-r--r--  1 nackjicholson wheel 5.3K Jun 26 09:59 Screenshot from 2021-06-26 09-59-38.png
+  -rw-r--r--  1 nackjicholson wheel 215K Jun 26 18:58 Screenshot from 2021-06-26 18-58-14.png
+#+end_src
+
+You would like to use =0x0-dwim= to upload one of these screenshots. You hover over one of the file names, and do ~M-x 0x0-dwim~. You did successfully upload something, but it wasn't the image you intended to upload. You uploaded the exact text above, the full text of your dired buffer. Why? Well, it's because the names of these files =Screenshot from <date> <time>.png= have spaces in them. If it was =mypic.png= it would upload the image as expected. This spaces problem goes for any file type, not just images. Beware of using =0x0-dwim= in dired mode. For now, until this bug is fixed use =0x0-upload-file= instead, it works.
+
+**** =0x0-dwim= EVIL Bug
+
+Beware of =0x0-dwim= if you are an evil-mode user. In fact, I'd say until it is significantly changed or made more customizable, it should be avoided. You yanked a bit of code like the following using ~evil-yank~ and then hit ~M-x 0x0-dwim~ intending to upload from your kill-ring.
+
+#+begin_src emacs-lisp :eval never
+;;;###autoload
+(defun my-fun-fun (a)
+  (+ 2 a))
+#+end_src
+
+Oh, when you yanked your cursor was still on that word =autoload= though! You didn't just upload your yanked text, for some reason you just uploaded a gzip file that contains an =autoload.el= file from somewhere on your system. If you accidentally have your cursor on a word like =id_rsa= when you run =0x0-dwim=, :facepalm: maybe you just uploaded your private ssh keys. I don't know, because I haven't actually tried it. I don't know which words will cause strange events like this.
+
+*Note: This is so egregious that 0x0-dwim needs to be significantly neutralized or removed altogether*
+
+** Help on IRC
+
+Join the =#systemcrafters= channel on libera.chat and message =nackjicholson=. You can also query me directly on libera.
+
+** Licensing and Copying Information
+
+This project began under the Creative Commons CC0 License which is a license that offers the work to the public domain with no conditions at all. I have left that license in the repo as LICENSE-nullpointer-emacs. But I have relicensed the work under the conditions of the GPLv3 (as described by the COPYING file) in order to be better aligned with the Emacs ecosystem and MELPA.
+
+emacs-0x0 / 0x0.el Upload to 0x0.st
+Copyright (C) 2021 William Vaughn
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.

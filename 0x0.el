@@ -1,88 +1,80 @@
-;;; 0x0.el --- Upload to 0x0.st -*- lexical-binding: t -*-
-
-;; Author: Philip K. <philipk@posteo.net>
-;; Version: 0.4.3
-;; Keywords: comm
-;; Package-Requires: ((emacs "24.1"))
-;; URL: https://git.sr.ht/~zge/nullpointer-emacs
-
-;; This file is NOT part of Emacs.
+;;; 0x0.el --- Upload sharing to 0x0.st -*- lexical-binding: t; -*-
 ;;
-;; This file is in the public domain, to the extent possible under law,
-;; published under the CC0 1.0 Universal license.
+;; Copyright (C) 2021 William Vaughn
 ;;
-;; For a full copy of the CC0 license see
-;; https://creativecommons.org/publicdomain/zero/1.0/legalcode
-
+;; Author: William Vaughn <https://gitlab.com/willvaughn>
+;; Maintainer: William Vaughn <vaughnwilld@gmail.com>
+;; Created: June 26, 2021
+;; Modified: June 26, 2021
+;; Version: 1.0.0
+;; Homepage: https://gitlab.com/willvaughn/emacs-0x0
+;; Package-Requires: ((emacs "26.1"))
+;;
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+;;
 ;;; Commentary:
 ;;
-;; Upload whatever you need to a pastebin server.  The most practical
-;; command defined in this package is `0x0-dwim', but `0x0-upload',
-;; `0x0-upload-file' and `0x0-upload-string', which respectively upload
-;; (parts of) the current buffer, a file on your disk and a string from
-;; the minibuffer can be used too.
-;;
-;; The default host and the host this package is named after is
-;; https://0x0.st.  Consider donating to
-;; https://liberapay.com/mia/donate if you like the service.
+;; Integration with https://0x0.st, envs.sh, ttm.sh, and self-hosted services
+;; from Emacs. Intended for sharing images, files, and blocks of code in ERC.
 
 (require 'url)
 
 ;;; Code:
-
 (defgroup 0x0 nil
-  "Upload data to 0x0.st-compatible servers."
+  "Share files, links, pastes, and images with others."
   :group 'convenience
+  :tag "0x0"
   :prefix "0x0-")
 
-(defcustom 0x0-services
+(defcustom 0x0-servers
   `((0x0
+     :scheme "https"
      :host "0x0.st"
-     :query "file"
+     :default-dir "~/Desktop"
+     :curl-args-fun 0x0--make-0x0-curl-args
      :min-age 30
      :max-age 365
      :max-size ,(* 1024 1024 512))
     (ttm
+     :scheme "https"
      :host "ttm.sh"
-     :query "file"
+     :default-dir "~/Desktop"
+     :curl-args-fun 0x0--make-0x0-curl-args
      :min-age 30
      :max-age 365
      :max-size ,(* 1024 1024 256))
     (envs
+     :scheme "https"
      :host "envs.sh"
-     :query "file"
+     :default-dir "~/Desktop"
+     :curl-args-fun 0x0--make-0x0-curl-args
      :min-age 30
      :max-age 365
      :max-size ,(* 1024 1024 512)))
-  "Alist of different 0x0-like services.
+  "Configurations for the target servers.
 
-The car is a symbol identifying the service, the cdr a plist,
-with the following keys:
-
-    :host		- domain name of the server (string, necessary)
-    :path		- server path to send POST request to (string,
-				  optional)
-    :no-tls		- is tls not supported (bool, nil by default)
-    :query		- query string used for file upload (string,
-				  necessary)
-    :min-age	- on 0x0-like servers, minimal number of days
-				  a file is kept online (number, optional)
-    :max-age	- on 0x0-like servers, maximal number of days
-				  a file is kept online (number, optional)
-    :max-size	- file limit for this server (number, optional)
-
-This variable only describes servers, but doesn't set anything.
-See `0x0-default-host' if you want to change the server you use."
+Override these values to associate your own target servers."
   :type '(alist :key-type symbol
                 :value-type (plist :value-type sexp)))
 
-(defcustom 0x0-default-service '0x0
+(defcustom 0x0-default-server '0x0
   "Symbol describing server to use.
 
-The symbol must be a key from the alist `0x0-services'."
+The symbol must be a key from the alist `0x0-servers'."
   :type `(choice ,@(mapcar (lambda (srv)
                              `(const :tag ,(plist-get (cdr srv) :host) ,(car srv)))
-                           0x0-services)))
+                           0x0-servers)))
 
 (defcustom 0x0-use-curl 'if-installed
   "Policy how how to use curl.
@@ -95,234 +87,249 @@ curl binary."
                  (const :tag "Never" nil)
                  (string :tag "Path to curl")))
 
-(defcustom 0x0-use-curl-if-installed t
-  "Automatically check if curl is installed."
-  :set (lambda (sym val)
-         (setq 0x0-use-curl (if val 'if-installed nil))
-         (set-default sym val))
-  :type 'boolean)
+(defun 0x0--choose-server ()
+  "Prompt user for service to use."
+  (let ((server-key (if current-prefix-arg
+                        (intern (completing-read "Server: "
+                                                 (mapcar #'car 0x0-servers)
+                                                 nil t nil nil
+                                                 0x0-default-server))
+                      0x0-default-server)))
+    (cdr (assq server-key 0x0-servers))))
 
-(make-obsolete-variable '0x0-use-curl-if-installed
-                        '0x0-use-curl
-                        "0.4.0" 'set)
-
-(defvar 0x0--filename nil)
-(defvar 0x0--use-file nil)
-(defvar 0x0--current-host nil)
-(defvar 0x0--server)
-
-(defun 0x0--calculate-timeout (size)
-  "Calculate days a file of size SIZE would last."
+(defun 0x0--calculate-timeout (server size)
+  "Calculate days a file of size SIZE would last on SERVER."
   (condition-case nil
-      (let ((min-age (float (plist-get 0x0--server :min-age)))
-            (max-age (float (plist-get 0x0--server :max-age)))
-            (max-size (float (plist-get 0x0--server :max-size))))
+      (let ((min-age (float (plist-get server :min-age)))
+            (max-age (float (plist-get server :max-age)))
+            (max-size (float (plist-get server :max-size))))
         (+ min-age (* (- min-age max-age)
                       (expt (- (/ size max-size) 1.0) 3))))
     (wrong-type-argument nil)))
 
-(defun 0x0--use-curl (start end)
-  "Backend function for uploading using curl.
+(defun 0x0--get-server-default-dir (server)
+  "Access the :default-dir property of the SERVER Property list."
+  (plist-get server :default-dir))
 
-Operate on region between START and END."
-  (let ((buf (generate-new-buffer (format " *%s response*" 0x0--current-host))))
-    (call-process-region start end (if (stringp 0x0-use-curl) 0x0-use-curl "curl")
-                         nil buf nil
-                         "-s" "-S" "-F"
-                         (format (if 0x0--use-file
-                                     "%s=@%s"
-                                   "%s=@-;filename=%s")
-                                 (plist-get 0x0--server :query)
-                                 (expand-file-name 0x0--filename))
-                         (format "%s://%s/%s"
-                                 (if (plist-get 0x0--server :no-tls)
-                                     "http" "https")
-                                 (plist-get 0x0--server :host)
-                                 (or (plist-get 0x0--server :path) "")))
+(defun 0x0--get-server-curl-args-fun (server)
+  "Access the value of :curl-args-fun on the SERVER."
+  (plist-get server :curl-args-fun))
+
+(defun 0x0--pick-file (server)
+  "Prompt to pick a file path or use dired file at point.
+
+This function creates a prompt for interactive functions below.
+The SERVER is used to look up the default directory to use for where to find
+uploadable files."
+  (cond ((equal major-mode 'dired-mode) (dired-file-name-at-point))
+        (t (read-file-name "Pick a file to share: " (0x0--get-server-default-dir server)))))
+
+(defun 0x0--make-server-host-uri (server &optional basic-auth-creds)
+  "Make a SERVER host URI using configuration properties.
+
+BASIC-AUTH-CREDS plist optionally contains :user and :pass."
+  (if basic-auth-creds
+      (format "%s://%s:%s@%s"
+              (plist-get server :scheme)
+              (plist-get basic-auth-creds :user)
+              (plist-get basic-auth-creds :pass)
+              (plist-get server :host))
+    (format "%s://%s" (plist-get server :scheme) (plist-get server :host))))
+
+(defun 0x0--make-0x0-curl-args (server file-name &optional bounded)
+  "Create 0x0 curl arguments from SERVER configs and FILE-NAME.
+
+BOUNDED indicates a partial upload and that changes querystring parameters."
+  (let ((q-string (if bounded
+                      "file=@-;filename=%s"
+                    "file=@%s")))
+    (list "-s" "-S" "-F" (format q-string file-name) (0x0--make-server-host-uri server))))
+
+(defun 0x0--make-curl-args (server file-name &optional bounded)
+  "Call SERVER :curl-args-fun with FILE-NAME and BOUNDED arguments."
+  (let ((curl-args-fun (0x0--get-server-curl-args-fun server)))
+    (funcall curl-args-fun server file-name bounded)))
+
+(defun 0x0--make-bounds (&optional start end)
+  "Make Bounds property list from START and END points.
+
+Defaults START to =point-min= and END to =point-min=."
+  (let ((start (or start (point-min)))
+        (end (or end (point-max))))
+    (list :start start :end end)))
+
+(defun 0x0--bounds-size (bounds)
+  "Get end - start size of BOUNDS."
+  (- (plist-get bounds :end) (plist-get bounds :start)))
+
+(defun 0x0--curl (curl-args &optional bounds)
+  "Wrapper around curl background process call.
+
+CURL-ARGS are forwarded to the curl command. If BOUNDS are supplied the curl
+process call will be called using =call-process-region= on the portion of the
+buffer between start and end."
+  (let ((buf (generate-new-buffer "*0x0 response*"))
+        (curl-cmd (if (stringp 0x0-use-curl) 0x0-use-curl "curl")))
+    (if bounds
+        (apply #'call-process-region (plist-get bounds :start) (plist-get bounds :end) curl-cmd nil buf nil curl-args)
+      (apply #'call-process curl-cmd nil buf nil curl-args))
     buf))
 
-(defun 0x0--use-url (start end)
-  "Backend function for uploading using `url' functions.
+(defun 0x0--make-url-props (server file-name &optional bounded)
+  "Create 0x0 url arguments from SERVER configs and FILE-NAME.
 
-Operate on region between START and END."
+BOUNDED indicates a partial upload and changes querystring parameters."
+  (let ((query-str (format "name=\"file\"; filename=\"%s\"" (file-name-nondirectory file-name)))
+        (host-uri (0x0--make-server-host-uri server))
+        (file-path (unless bounded file-name)))
+    (list :file-path file-path :query-str query-str :host-uri host-uri)))
+
+(defun 0x0--url (url-props &optional bounds)
+  "Uploading using `url' functions according to URL-PROPS infrormation.
+
+Operate on region between BOUNDS."
   (let* ((boundary (format "%X-%X-%X" (random) (random) (random)))
+         (file-path (plist-get url-props :file-path))
+         (query-str (plist-get url-props :query-str))
+         (host-uri (plist-get url-props :host-uri))
          (url-request-extra-headers
           `(("Content-Type" . ,(concat "multipart/form-data; boundary=" boundary))))
          (url-request-data
-          (let ((source (current-buffer))
-                (filename (or 0x0--filename (buffer-name))))
+          (let ((source (if file-path
+                            (with-temp-buffer
+                              (insert-file-contents file-path)
+                              (buffer-substring-no-properties (point-min) (point-max)))
+                          (buffer-substring-no-properties (plist-get bounds :start) (plist-get bounds :end)))))
             (with-temp-buffer
               (insert "--" boundary "\r\n")
               (insert "Content-Disposition: form-data; ")
-              (insert "name=\"" (plist-get 0x0--server :query)
-                      "\"; filename=\"" filename "\"\r\n")
+              (insert query-str "\r\n")
               (insert "Content-type: text/plain\r\n\r\n")
-              (insert-buffer-substring-no-properties source start end)
+              (insert source)
               (insert "\r\n--" boundary "--")
               (buffer-string))))
          (url-request-method "POST"))
-    (with-current-buffer
-        (url-retrieve-synchronously
-         (concat (if (plist-get 0x0--server :no-tls)
-                     "http" "https")
-                 "://" (plist-get 0x0--server :host)
-                 "/" (or (plist-get 0x0--server :path) "")))
-      (rename-buffer (format " *%s response*" 0x0--current-host) t)
+    (with-current-buffer (url-retrieve-synchronously host-uri)
+      (rename-buffer "*0x0 response*" t)
       (goto-char (point-min))
       (save-match-data
         (when (search-forward-regexp "^[[:space:]]*$" nil t)
           (delete-region (point-min) (match-end 0))))
       (current-buffer))))
 
-(defun 0x0--choose-service ()
-  "Prompt user for service to use."
-  (if current-prefix-arg
-      (intern
-       (completing-read "Service: "
-                        (mapcar #'car 0x0-services)
-                        nil t nil nil
-                        0x0-default-service))
-    0x0-default-service))
+(defun 0x0--send (server file-name &optional bounds)
+  "Send data to SERVER from file with FILE-NAME.
 
-(defun 0x0--filename ()
-  "Return a real or made up file name for the current request."
-  (cond
-   ((buffer-file-name)
-    (file-name-nondirectory (buffer-file-name)))
-   ((string-match-p "\\.[[:alnum:]]+\\'"
-                    (buffer-name))
-    (buffer-name))
-   ((catch 'match
-      (let ((mode major-mode))
-        (while mode
-          (let ((auto (rassoc mode auto-mode-alist)))
-            (when (and auto
-                       (string-match "\\\\\\.\\([[:alnum:]]+\\)\\\\'"
-                                     (car auto)))
-              (throw 'match
-                     (concat "file." (match-string 1 (car auto))))))
-          (setq mode (get mode 'derived-mode-parent))))))))
+Optionally, uses BOUNDS when sending a partial file as text."
+  (if (cond ((eq 0x0-use-curl t))
+            ((eq 0x0-use-curl 'if-installed) (executable-find "curl"))
+            ((stringp 0x0-use-curl)))
+      (0x0--curl (0x0--make-curl-args server file-name bounds) bounds)
+    (0x0--url (0x0--make-url-props server file-name bounds) bounds)))
 
-;;;###autoload
-(defun 0x0-upload (start end service)
-  "Upload current buffer to `0x0-url' from START to END.
+(defun 0x0--handle-resp (server size resp)
+  "Yank successful SERVER share URI into \"kill-ring\" from response RESP.
 
-If START and END are not specified, upload entire buffer.
-SERVICE must be a member of `0x0-services'."
-  (interactive (list (if (use-region-p) (region-beginning) (point-min))
-                     (if (use-region-p) (region-end) (point-max))
-                     (0x0--choose-service)))
-  (let ((0x0--current-host (or 0x0--current-host service))
-        (0x0--server (cdr (assq service 0x0-services)))
-        (0x0--filename (or 0x0--filename (0x0--filename))))
-    (unless 0x0--server
-      (error "Service %s unknown" service))
-    (unless (plist-get 0x0--server :host)
-      (error "Service %s has no :host field" service))
-    (unless (plist-get 0x0--server :query)
-      (error "Service %s has no :query field" service))
-    (let ((resp (if (cond ((eq 0x0-use-curl t))
-                          ((eq 0x0-use-curl 'if-installed)
-                           (executable-find "curl"))
-                          ((stringp 0x0-use-curl)))
-                    (0x0--use-curl start end)
-                  (0x0--use-url start end)))
-          (timeout (0x0--calculate-timeout (- end start))))
-      (with-current-buffer resp
-        (goto-char (point-min))
-        (save-match-data
-          (unless (search-forward-regexp
-                   (concat "^"
-                           (regexp-opt '("http" "https"))
-                           "://"
-                           (regexp-quote (plist-get 0x0--server :host))
-                           ".+")
-                   nil t)
-            (error "Failed to upload/parse.  See %s for more details"
-                   (buffer-name resp)))
-          (kill-new (match-string 0))
-          (message (concat "Yanked `%s' into kill ring."
-                           (and timeout " Should last ~%g days."))
-                   (match-string 0) timeout)
-          (prog1 (match-string 0)
-            (kill-buffer resp)))))))
+The SIZE influences the estimate of file timeout."
+  (with-current-buffer resp
+    (goto-char (point-min))
+    (save-match-data
+      (unless (search-forward-regexp (concat "^" (0x0--make-server-host-uri server) ".+") nil t)
+        (error "Failed to upload/parse. see %s for more details"
+               (buffer-name (current-buffer))))
+      (kill-new (match-string 0))
+      (let ((timeout (and size (0x0--calculate-timeout server size))))
+        (message (concat "yanked `%s' into kill ring."
+                         (and timeout " Should last ~%g days."))
+                 (match-string 0) timeout))
+      (prog1 (match-string 0)
+        (kill-buffer (current-buffer))))))
 
 ;;;###autoload
-(defun 0x0-upload-file (file service)
-  "Upload FILE to `0x0-url'.
-
-SERVICE must be a member of `0x0-services'."
-  (interactive (list (read-file-name "Upload file: ")
-                     (0x0--choose-service)))
-  (with-temp-buffer
-    (unless 0x0-use-curl-if-installed
-      (insert-file-contents file))
-    (let ((0x0--filename file)
-          (0x0--use-file t))
-      (0x0-upload (point-min) (point-max) service))))
+(defun 0x0-upload-file (server file)
+  "Choose FILE and upload it to SERVER."
+  (interactive (let ((srv (0x0--choose-server)))
+                 (list srv
+                       (0x0--pick-file srv))))
+  (let* ((file-name (expand-file-name file))
+         (size (file-attribute-size (file-attributes file)))
+         (resp (0x0--send server file-name)))
+    (0x0--handle-resp server size resp)))
 
 ;;;###autoload
-(defun 0x0-upload-string (string service)
-  "Upload STRING to `0x0-url'.
-
-SERVICE must be a member of `0x0-services'."
-  (interactive (list (read-string "Upload string: ")
-                     (0x0--choose-service)))
-  (with-temp-buffer
-    (insert string)
-    (let ((0x0--filename "upload.txt"))
-      (0x0-upload (point-min) (point-max) service))))
+(defun 0x0-upload-text (server)
+  "Upload full or region text from the current buffer to SERVER."
+  (interactive (list (0x0--choose-server)))
+  ;; TODO file name looking like a function
+  (let* ((file-name "upload.txt")
+         (bounds (if (use-region-p)
+                     (0x0--make-bounds (region-beginning) (region-end))
+                   (0x0--make-bounds)))
+         (size (0x0--bounds-size bounds))
+         (resp (0x0--send server file-name bounds)))
+    (0x0--handle-resp server size resp)))
 
 ;;;###autoload
-(defun 0x0-upload-kill-ring (service)
-  "Upload current kill to `0x0-url'.
-
-SERVICE must be a member of `0x0-services'."
-  (interactive (list (0x0--choose-service)))
+(defun 0x0-upload-kill-ring (server)
+  "Upload content from the \"kill-ring\" to SERVER."
+  (interactive (list (0x0--choose-server)))
   (with-temp-buffer
     (insert (current-kill 0))
-    (let ((0x0--filename "kill-ring.txt"))
-      (0x0-upload (point-min) (point-max) service))))
+    (let* ((file-name (or (buffer-file-name) (buffer-name) "kill-ring.txt"))
+           (bounds (0x0--make-bounds))
+           (size (0x0--bounds-size bounds))
+           (resp (0x0--send server file-name bounds)))
+      (0x0--handle-resp server size resp))))
 
-(defun 0x0-popup-upload ()
-  "Uploads and kill current buffer."
-  (interactive)
-  (0x0-upload (point-min) (point-max) 0x0--current-host)
+;;;###autoload
+(defun 0x0-shorten-uri (server uri)
+  "Shorten the given URI with SERVER."
+  (interactive (list (0x0--choose-server)
+                     (read-string "URI: ")))
+  (unless (cond ((eq 0x0-use-curl t))
+                ((eq 0x0-use-curl 'if-installed) (executable-find "curl"))
+                ((stringp 0x0-use-curl)))
+    (error "Unsupported currenlty without using curl"))
+  (let* ((host-uri (0x0--make-server-host-uri server))
+         (curl-args (list "-s" "-S" "-F" (format "shorten=%s" uri) host-uri))
+         (resp (0x0--curl curl-args)))
+    (0x0--handle-resp server nil resp)))
+
+(defun 0x0-popup-upload (server)
+  "Upload to SERVER and kill current buffer."
+  (interactive (list (0x0--choose-server)))
+  (let* ((file-name "popup-upload.txt")
+         (bounds (0x0--make-bounds))
+         (size (0x0--bounds-size bounds))
+         (resp (0x0--send server file-name bounds)))
+    (0x0--handle-resp server size resp))
   (kill-buffer (current-buffer)))
 
 ;;;###autoload
-(defun 0x0-popup (service)
-  "Create a new buffer and upload it later.
-
-SERVICE must be a member of `0x0-services'."
-  (interactive (list (0x0--choose-service)))
-  (with-current-buffer (generate-new-buffer " *upload*")
-    (local-set-key (kbd "C-c C-c") #'0x0-popup-upload)
-    (setq-local 0x0--current-host service)
+(defun 0x0-popup (server)
+  "Create a new buffer, fill it with content, and upload it to SERVER later."
+  (interactive (list (0x0--choose-server)))
+  (with-current-buffer (generate-new-buffer "*upload*")
+    (local-set-key (kbd "C-c C-c") (lambda ()
+                                     (interactive)
+                                     (let ((current-prefix-arg current-prefix-arg))
+                                       (0x0-popup-upload server))))
     (pop-to-buffer (current-buffer)))
   (message "Press C-c C-c to upload."))
 
 ;;;###autoload
-(defun 0x0-dwim (service)
-  "Try to guess what to upload.
-
-SERVICE must be a member of `0x0-services'."
-  (interactive (list (0x0--choose-service)))
+(defun 0x0-dwim (server)
+  "Try to guess what to upload to SERVER."
+  (interactive (list (0x0--choose-server)))
   (cond ((region-active-p)
-         (0x0-upload (region-beginning)
-                     (region-end)
-                     service))
+         (0x0-upload-text server))
         ((memq last-command '(kill-ring-save
                               kill-region
                               append-next-kill))
-         (0x0-upload-kill-ring service))
-        ((let ((file (ffap-guess-file-name-at-point)))
-           (0x0-upload-file file service)
-           t))
-        ((0x0-upload (point-min)
-                     (point-max)
-                     service))))
+         (0x0-upload-kill-ring server))
+        ((when-let ((file (ffap-guess-file-name-at-point)))
+           (0x0-upload-file server file)))
+        ((0x0-upload-text server))))
 
 (provide '0x0)
-
 ;;; 0x0.el ends here
