@@ -128,7 +128,7 @@ curl binary."
 This function creates a prompt for interactive functions below.
 The SERVER is used to look up the default directory to use for where to find
 uploadable files."
-  (cond ((equal major-mode 'dired-mode) (dired-file-name-at-point))
+  (cond ((derived-mode-p 'dired-mode) (dired-file-name-at-point))
         (t (read-file-name "Pick a file to share: " (0x0--get-server-default-dir server)))))
 
 (defun 0x0--make-server-host-uri (server &optional basic-auth-creds)
@@ -334,7 +334,7 @@ The SIZE influences the estimate of file timeout."
                               kill-region
                               append-next-kill))
          (0x0-upload-kill-ring server))
-        ((equal major-mode 'dired-mode)
+        ((derived-mode-p 'dired-mode)
          (0x0-upload-file server (dired-file-name-at-point)))
         ((ffap-guess-file-name-at-point) (if-let* ((file (ffap-guess-file-name-at-point)))
                                              (when (yes-or-no-p (format "Is publicly sharing this file what you intended? %s" file))
