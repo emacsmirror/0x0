@@ -336,8 +336,9 @@ The SIZE influences the estimate of file timeout."
          (0x0-upload-kill-ring server))
         ((equal major-mode 'dired-mode)
          (0x0-upload-file server (dired-file-name-at-point)))
-        ((when-let ((file (ffap-guess-file-name-at-point)))
-           (0x0-upload-file server file)))
+        ((ffap-guess-file-name-at-point) (if-let* ((file (ffap-guess-file-name-at-point)))
+                                             (when (yes-or-no-p (format "Is publicly sharing this file what you intended? %s" file))
+                                               (0x0-upload-file server file))))
         ((0x0-upload-text server))))
 
 (provide '0x0)

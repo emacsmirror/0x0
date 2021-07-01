@@ -56,11 +56,9 @@ Calling =0x0-shorten-uri= without having support for curl is not implemented at 
 
 *** =0x0-dwim= Considered Dangerous
 
-You can upload information you didn't intend to when using =0x0-dwim= much easier than you can when using other commands.
+You can easily upload information you didn't intend to when using =0x0-dwim=. This command will attempt to guess your intentions, and it uses the [[https://www.gnu.org/software/emacs/manual/html_node/emacs/FFAP.html#index-ffap][Find File at Point (ffap)]] library in emacs to do so. In the past it could guess wrong, as in the following example. Now there is a yes/no prompt to confirm any selection made by =ffap= matches with the user's intention.
 
-**** =0x0-dwim= EVIL Bug
-
-Beware of =0x0-dwim= if you are an evil-mode user. In fact, I'd say until it is significantly changed or made more customizable, it should be avoided. You yanked a bit of code like the following using ~evil-yank~ and then hit ~M-x 0x0-dwim~ intending to upload from your kill-ring.
+Example: You highlighted and copied the following code using ~evil-yank~ and then hit ~M-x 0x0-dwim~ intending to upload it to 0x0.st from your Emacs kill-ring.
 
 #+begin_src emacs-lisp :eval never
 ;;;###autoload
@@ -68,9 +66,7 @@ Beware of =0x0-dwim= if you are an evil-mode user. In fact, I'd say until it is 
   (+ 2 a))
 #+end_src
 
-Oh, when you yanked your cursor was still on that word =autoload= though! You didn't just upload your yanked text, for some reason you just uploaded a gzip file that contains an =autoload.el= file from somewhere on your system. If you accidentally have your cursor on a word like =id_rsa= when you run =0x0-dwim=, :facepalm: maybe you just uploaded your private ssh keys. I don't know, because I haven't actually tried it. I don't know which words will cause strange events like this.
-
-*Note: This is so egregious that 0x0-dwim needs to be significantly neutralized or removed altogether*
+However, after yanking your cursor was on top of the word =autoload=! You didn't just upload your yanked text, for some reason you just got prompted to upload an =autoload.el= file from somewhere on your system. When =0x0-dwim= prompts you, read carefully. If you say no, no further action will be taken.
 
 ** Help on IRC
 
