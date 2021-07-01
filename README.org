@@ -74,7 +74,7 @@ Join the =#systemcrafters= channel on libera.chat and message =nackjicholson=. Y
 
 ** Licensing and Copying Information
 
-This project was originally written by Philip Kaludercic here https://git.sr.ht/~pkal/nullpointer-emacs. It was put under the Creative Commons CC0 License which is a license that offers the work to the public domain with no conditions at all. The original CC0 license remains in the repo at LICENSE-nullpointer-emacs for transparency but this fork is now licensed more strictly under the GPLv3 (as described by the COPYING file). This aligns the project with many packages in the Emacs ecosystem, MELPA, and ELPA.
+This project was originally written by Philip Kaludercic here https://git.sr.ht/~pkal/nullpointer-emacs. It was put under the [[https://creativecommons.org/publicdomain/zero/1.0/][Creative Commons CC0 Public Domain License]] which offers the work with no conditions. It is now under the GPLv3 (as described by the COPYING file). This aligns the project with many packages in the Emacs ecosystem, MELPA, and ELPA.
 
 #+begin_quote
 emacs-0x0 -- 0x0.el Upload to 0x0.st
