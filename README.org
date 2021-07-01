@@ -8,7 +8,7 @@ The commands this package offers:
 - ~0x0-upload-text~ will upload the active region or if not existent the entire buffer
 - ~0x0-upload-file~ will upload a selected file
 - ~0x0-upload-kill-ring~ uploads the content of the kill ring
-- ~0x0-popup~ creates and displays a buffer and lets you uploads it contents later
+- ~0x0-popup~ creates and displays a buffer, lets you upload its contents later
 - ~0x0-shorten-uri~ prompts for a uri, shortens it
 
 ** Installation
@@ -39,10 +39,10 @@ Use cases:
 - From anywhere: ~0x0-upload-file~, pick a file, you now have a 0x0 uri in your clipboard.
 - From anywhere: ~0x0-shorten-uri~, paste in the url you want shortened, you now have a 0x0 uri in your clipboard.
 - From a dired buffer: put your cursor on the file you want to share, use ~0x0-upload-file~ or ~0x0-dwim~, you now have a 0x0 uri in your clipboard.
-- From a code file: ~0x0-upload-text~ or ~0x0-dwim~, the entire file is uploaded and you now have a 0x0 uri in your clipboard.
+- From a file: ~0x0-upload-text~ or ~0x0-dwim~, the entire file is uploaded and you now have a 0x0 uri in your clipboard.
 - From a code file, with a region selected: ~0x0-upload-text~ or ~0x0-dwim~, the selected text is uploaded and you now have a 0x0 uri in your clipboard.
 - From anywhere: ~0x0-popup~, opens a buffer, paste and write things into it, when you're ready to upload it to 0x0 press ~C-c C-c~, you now have a 0x0 uri in your clipboard.
-- Choosing servers: Add the ~C-u~ prefix argument and you'll be prompted for a server choice. This let's you upload to [[https://envs.sh]], [[https://ttm.sh]], or a server you run yourself.
+- Choosing servers: Add the ~C-u~ prefix argument and you'll be prompted for a server choice. This lets you upload to [[https://envs.sh]], [[https://ttm.sh]], or a server you run yourself.
 
 ** Known Bugs & Limitations
 
@@ -83,7 +83,7 @@ Copyright (C) 2021 William Vaughn
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-You should have received a copy of the GNU General Public License along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
 #+end_quote
