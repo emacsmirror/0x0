@@ -58,21 +58,6 @@ Calling =0x0-shorten-uri= without having support for curl is not implemented at 
 
 You can upload information you didn't intend to when using =0x0-dwim= much easier than you can when using other commands.
 
-**** =0x0-dwim= Dired Bug
-
-You're in your =~/Pictures= directoy in a =dired= buffer:
-
-#+begin_src
-  /home/nackjicholson/Pictures:
-  total used in directory 276K available 115.6 GiB
-  -rw-r--r--  1 nackjicholson wheel  683 Jun 23 16:50 Screenshot from 2021-06-23 16-49-59.png
-  -rw-r--r--  1 nackjicholson wheel  10K Jun 24 11:17 Screenshot from 2021-06-24 11-17-06.png
-  -rw-r--r--  1 nackjicholson wheel 5.3K Jun 26 09:59 Screenshot from 2021-06-26 09-59-38.png
-  -rw-r--r--  1 nackjicholson wheel 215K Jun 26 18:58 Screenshot from 2021-06-26 18-58-14.png
-#+end_src
-
-You would like to use =0x0-dwim= to upload one of these screenshots. You hover over one of the file names, and do ~M-x 0x0-dwim~. You did successfully upload something, but it wasn't the image you intended to upload. You uploaded the exact text above, the full text of your dired buffer. Why? Well, it's because the names of these files =Screenshot from <date> <time>.png= have spaces in them. If it was =mypic.png= it would upload the image as expected. This spaces problem goes for any file type, not just images. Beware of using =0x0-dwim= in dired mode. For now, until this bug is fixed use =0x0-upload-file= instead, it works.
-
 **** =0x0-dwim= EVIL Bug
 
 Beware of =0x0-dwim= if you are an evil-mode user. In fact, I'd say until it is significantly changed or made more customizable, it should be avoided. You yanked a bit of code like the following using ~evil-yank~ and then hit ~M-x 0x0-dwim~ intending to upload from your kill-ring.
@@ -97,6 +82,7 @@ This project was originally written by Philip Kaludercic here https://git.sr.ht/
 
 #+begin_quote
 emacs-0x0 -- 0x0.el Upload to 0x0.st
+
 Copyright (C) 2021 William Vaughn
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
