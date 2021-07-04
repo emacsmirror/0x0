@@ -15,7 +15,7 @@ The commands this package offers:
 
 *** MELPA
 
-Coming soon.
+This project is on MELPA as [[https://melpa.org/#/0x0][0x0]].
 
 *** Doom Emacs (straight.el recipe + use-package)
 
