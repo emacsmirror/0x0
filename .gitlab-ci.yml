@@ -1,0 +1,7 @@
+default:
+  image: rockylinux/rockylinux
+  before_script:
+    - dnf install -y emacs
+test:
+  script:
+    - "emacs -batch -l ert -l 0x0.el -l 0x0-test.el -eval \"(ert-run-tests-batch-and-exit '(not (tag :integration)))\""
