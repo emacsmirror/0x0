@@ -123,7 +123,7 @@ curl binary."
   (plist-get server :curl-args-fun))
 
 (defun 0x0--pick-file (server)
-  "Prompt to pick a file path or use dired file at point.
+  "Prompt to pick a file path or use Dired file at point.
 
 This function creates a prompt for interactive functions below.
 The SERVER is used to look up the default directory to use for where to find
@@ -337,7 +337,7 @@ The SIZE influences the estimate of file timeout."
         ((derived-mode-p 'dired-mode)
          (0x0-upload-file server (dired-file-name-at-point)))
         ((ffap-guess-file-name-at-point) (if-let* ((file (ffap-guess-file-name-at-point)))
-                                             (when (yes-or-no-p (format "Is publicly sharing this file what you intended? %s" file))
+                                             (when (yes-or-no-p (format "Is publicly sharing this file, %s, what you intended?" file))
                                                (0x0-upload-file server file))))
         ((0x0-upload-text server))))
 
