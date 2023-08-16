@@ -1,13 +1,13 @@
 ;;; 0x0.el --- Upload sharing to 0x0.st -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2021 William Vaughn
+;; Copyright (C) 2023 William Vaughn
 ;;
-;; Author: William Vaughn <https://gitlab.com/willvaughn>
+;; Author: William Vaughn <https://git.sr.ht/~willvaughn/>
 ;; Maintainer: William Vaughn <vaughnwilld@gmail.com>
 ;; Created: June 26, 2021
-;; Modified: June 26, 2021
-;; Version: 1.0.0
-;; Homepage: https://gitlab.com/willvaughn/emacs-0x0
+;; Modified: August 16, 2023
+;; Version: 1.0.1
+;; Homepage: https://git.sr.ht/~willvaughn/emacs-0x0
 ;; Package-Requires: ((emacs "26.1"))
 ;;
 ;; This program is free software: you can redistribute it and/or modify
