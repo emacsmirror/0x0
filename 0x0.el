@@ -2,7 +2,7 @@
 ;;
 ;; Copyright (C) 2023 William Vaughn
 ;;
-;; Author: William Vaughn <https://git.sr.ht/~willvaughn/>
+;; Author: William Vaughn <vaughnwilld@gmail.com>
 ;; Maintainer: William Vaughn <vaughnwilld@gmail.com>
 ;; Created: June 26, 2021
 ;; Modified: August 16, 2023
